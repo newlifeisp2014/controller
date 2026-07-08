@@ -1974,12 +1974,18 @@ window.startGamepadApiMode = () => {
       // Map triggers
       controller.button_states.l2_analog = Math.round((gp.buttons[6]?.value || 0) * 255);
       controller.button_states.r2_analog = Math.round((gp.buttons[7]?.value || 0) * 255);
+      
+      const changes = {
+        l2_analog: controller.button_states.l2_analog,
+        r2_analog: controller.button_states.r2_analog,
+      };
 
       // Map buttons (Standard Gamepad Mapping)
       const standardButtons = ['cross', 'circle', 'square', 'triangle', 'l1', 'r1', 'l2', 'r2', 'create', 'options', 'l3', 'r3', 'up', 'down', 'left', 'right', 'ps', 'touchpad'];
       for (let i = 0; i < standardButtons.length; i++) {
         if (gp.buttons[i]) {
           controller.button_states[standardButtons[i]] = gp.buttons[i].pressed;
+          changes[standardButtons[i]] = gp.buttons[i].pressed;
         }
       }
 
@@ -2004,6 +2010,23 @@ window.startGamepadApiMode = () => {
       // Update UI
       if (typeof update_stick_graphics === 'function') {
         update_stick_graphics(controller.button_states);
+      }
+      if (typeof update_ds_button_svg === 'function') {
+        const buttonMap = [
+          { name: 'square', svg: 'Square' },
+          { name: 'cross', svg: 'Cross' },
+          { name: 'circle', svg: 'Circle' },
+          { name: 'triangle', svg: 'Triangle' },
+          { name: 'l1', svg: 'L1' },
+          { name: 'r1', svg: 'R1' },
+          { name: 'create', svg: 'Create' },
+          { name: 'options', svg: 'Options' },
+          { name: 'l3', svg: 'L3' },
+          { name: 'r3', svg: 'R3' },
+          { name: 'ps', svg: 'PS' },
+          { name: 'touchpad', svg: 'Trackpad' },
+        ];
+        update_ds_button_svg(changes, buttonMap);
       }
     } else {
       $("#devname").text("Waiting for Gamepad (Press a button)...");
