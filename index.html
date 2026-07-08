@@ -298,6 +298,12 @@
                         <input type="radio" class="btn-check" name="displayMode" id="checkCircularityMode" value="checkCircularity">
                         <label class="btn btn-outline-secondary btn-sm ds-i18n" for="checkCircularityMode">Check circularity</label>
                       </div>
+                      
+                      <div class="mt-2 d-flex align-items-center justify-content-center">
+                        <label for="deadzoneSlider" class="form-label me-2 mb-0 ds-i18n">الديد زون (Deadzone):</label>
+                        <input type="range" class="form-range" id="deadzoneSlider" min="0" max="0.5" step="0.01" value="0" style="max-width: 150px;" oninput="document.getElementById('deadzoneValue').textContent = parseFloat(this.value).toFixed(2)">
+                        <span id="deadzoneValue" class="ms-2">0.00</span>
+                      </div>
                     </center>
                   </div>
                 </div>
