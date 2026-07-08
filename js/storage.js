@@ -12,6 +12,20 @@ export const Storage = {
     FINETUNE_CENTER_STEP_SIZE: 'finetuneCenterStepSize',
     FINETUNE_CIRCULARITY_STEP_SIZE: 'finetuneCircularityStepSize',
     FINETUNE_HISTORY: 'finetuneHistory',
+    CONTROLLER_PROFILES: 'controllerProfiles',
+  },
+
+  getProfile(serialNumber) {
+    if (!serialNumber) return null;
+    const profiles = this.getObject(this.STORAGE_KEYS.CONTROLLER_PROFILES) || {};
+    return profiles[serialNumber] || null;
+  },
+
+  saveProfile(serialNumber, profileData) {
+    if (!serialNumber) return;
+    const profiles = this.getObject(this.STORAGE_KEYS.CONTROLLER_PROFILES) || {};
+    profiles[serialNumber] = { ...profiles[serialNumber], ...profileData };
+    this.setObject(this.STORAGE_KEYS.CONTROLLER_PROFILES, profiles);
   },
 
   getChangesStorageKey(serialNumber) {
