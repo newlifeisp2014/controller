@@ -301,6 +301,11 @@ async function continue_connection({data, device}) {
       throw new Error(`Invalid number of sticks: ${numOfSticks}`);
     }
 
+    // Set a solid color upon connection so the lightbar doesn't keep changing
+    if (typeof controllerInstance.setLightbarColor === 'function') {
+      controllerInstance.setLightbarColor(0, 64, 255).catch(e => console.warn('Failed to set initial lightbar color', e));
+    }
+
     const model = controllerInstance.getModel();
 
     // Save controller info to local storage
@@ -938,6 +943,22 @@ function isRangeCalibrationVisible() {
 // Callback function to handle UI updates after controller input processing
 function handleControllerInput({ changes, inputConfig, touchPoints, batteryStatus, gyro, accel }) {
   const { buttonMap } = inputConfig;
+
+  if (changes.sticks) {
+    const deadzone = parseFloat(document.getElementById('deadzoneSlider')?.value) || 0;
+    if (deadzone > 0) {
+      const applyDeadzone = (stick) => {
+        if (!stick) return stick;
+        const mag = Math.sqrt(stick.x * stick.x + stick.y * stick.y);
+        if (mag < deadzone) {
+          return { ...stick, x: 0, y: 0 };
+        }
+        return stick;
+      };
+      changes.sticks.left = applyDeadzone(changes.sticks.left);
+      changes.sticks.right = applyDeadzone(changes.sticks.right);
+    }
+  }
 
   // Open Quick Test modal if options button is pressed while L1 is held down
   if (changes.options && controller.button_states.l1) {
