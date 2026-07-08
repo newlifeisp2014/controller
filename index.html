@@ -136,10 +136,15 @@
           <p id="d-bat" style="text-align: right;"></p>
         </div>
       </div>
-      <div class="d-flex gap-2">
+      <div class="d-flex gap-2 align-items-center">
         <button type="button" class="btn btn-outline-secondary btn-sm ds-i18n" onclick="disconnect()">
           <i class="fas fa-unlink me-1"></i>قطع الاتصال
         </button>
+        <div class="badge bg-secondary px-2 py-1 ms-auto d-flex align-items-center gap-2" style="font-size: 0.8rem; border-radius: var(--nl-radius-sm); border: 1px solid var(--nl-border);">
+          <i class="fas fa-bolt" style="color: var(--nl-accent-gold);"></i>
+          <span class="ds-i18n">سرعة الاستجابة:</span>
+          <span id="polling-rate-val" style="font-family: 'Roboto Mono', monospace; min-width: 45px; display: inline-block; text-align: right;">-- Hz</span>
+        </div>
       </div>
     </div>
 
@@ -646,6 +651,18 @@
     </div>
   </footer>
 
+  <!-- Service Worker Registration for PWA -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').then((registration) => {
+          console.log('ServiceWorker registration successful with scope: ', registration.scope);
+        }).catch((err) => {
+          console.log('ServiceWorker registration failed: ', err);
+        });
+      });
+    }
+  </script>
 </body>
 <script>
   document.getElementById('ny').textContent = new Date().getFullYear();
