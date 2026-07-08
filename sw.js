@@ -1,4 +1,4 @@
-const CACHE_NAME = 'newlife-controller-tool-v3';
+const CACHE_NAME = 'newlife-controller-tool-v4';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
