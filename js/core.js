@@ -301,19 +301,33 @@ async function continue_connection({data, device}) {
       throw new Error(`Invalid number of sticks: ${numOfSticks}`);
     }
 
-    // Set a solid color upon connection so the lightbar doesn't keep changing
-    if (typeof controllerInstance.setLightbarColor === 'function') {
-      controllerInstance.setLightbarColor(0, 64, 255).catch(e => console.warn('Failed to set initial lightbar color', e));
-    }
-
-    const model = controllerInstance.getModel();
-
     // Save controller info to local storage
+    const serialNumber = await controllerInstance.getSerialNumber();
     const lastConnectedInfo = {
       deviceName: deviceName,
       timestamp: new Date().toISOString(),
-      serialNumber: await controllerInstance.getSerialNumber(),
+      serialNumber: serialNumber,
     };
+
+    // Load Profile
+    const profile = Storage.getProfile(serialNumber);
+    if (profile) {
+      if (profile.deadzone !== undefined) {
+        const dzSlider = document.getElementById('deadzoneSlider');
+        if (dzSlider) {
+          dzSlider.value = profile.deadzone;
+          document.getElementById('deadzoneValue').textContent = parseFloat(profile.deadzone).toFixed(2);
+        }
+      }
+      if (profile.led && typeof controllerInstance.setLightbarColor === 'function') {
+        controllerInstance.setLightbarColor(profile.led.r, profile.led.g, profile.led.b).catch(e => console.warn('Failed to set profile lightbar color', e));
+      }
+    } else {
+      // Set a solid color upon connection so the lightbar doesn't keep changing
+      if (typeof controllerInstance.setLightbarColor === 'function') {
+        controllerInstance.setLightbarColor(0, 64, 255).catch(e => console.warn('Failed to set initial lightbar color', e));
+      }
+    }
 
     // Extract info from infoItems
     if (info.infoItems && Array.isArray(info.infoItems)) {
@@ -943,9 +957,30 @@ function isRangeCalibrationVisible() {
   return modal.classList.contains('show');
 }
 
+let _lastReportTime = 0;
+let _reportTimes = [];
+let _lastUiUpdateTime = 0;
+
 // Callback function to handle UI updates after controller input processing
 function handleControllerInput({ changes, inputConfig, touchPoints, batteryStatus, gyro, accel }) {
   const { buttonMap } = inputConfig;
+
+  // Calculate Polling Rate
+  const now = performance.now();
+  if (_lastReportTime !== 0) {
+    const delta = now - _lastReportTime;
+    _reportTimes.push(delta);
+    if (_reportTimes.length > 50) _reportTimes.shift();
+    
+    if (now - _lastUiUpdateTime > 500) {
+      const avgDelta = _reportTimes.reduce((a, b) => a + b, 0) / _reportTimes.length;
+      const hz = avgDelta > 0 ? Math.round(1000 / avgDelta) : 0;
+      const el = document.getElementById('polling-rate-val');
+      if (el) el.textContent = hz + ' Hz';
+      _lastUiUpdateTime = now;
+    }
+  }
+  _lastReportTime = now;
 
   if (changes.sticks) {
     const deadzone = parseFloat(document.getElementById('deadzoneSlider')?.value) || 0;
@@ -1853,9 +1888,13 @@ window.circ_checked = circ_checked;
 window.center_zoom_checked = center_zoom_checked;
 window.switchToRangeMode = switchToRangeMode;
 
-document.getElementById('deadzoneSlider')?.addEventListener('input', () => {
+document.getElementById('deadzoneSlider')?.addEventListener('input', async (e) => {
   if (controller && controller.button_states && controller.button_states.sticks) {
     update_stick_graphics({ sticks: controller.button_states.sticks });
+  }
+  if (controllerInstance) {
+    const sn = await controllerInstance.getSerialNumber();
+    Storage.saveProfile(sn, { deadzone: e.target.value });
   }
 });
 window.show_donate_modal = show_donate_modal;
