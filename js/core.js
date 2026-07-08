@@ -342,6 +342,7 @@ async function continue_connection({data, device}) {
 
     Storage.lastConnectedController.set(lastConnectedInfo);
     updateLastConnectedInfo();
+    const model = controller.getModel();
 
     // Initialize SVG controller based on model
     await init_svg_controller(model);
