@@ -29,6 +29,16 @@ export function draw_stick_dial(ctx, center_x, center_y, sz, stick_x, stick_y, o
     ctx.fill();
     ctx.stroke();
 
+    // Draw deadzone
+    if (opts.deadzone > 0) {
+        ctx.beginPath();
+        ctx.arc(center_x, center_y, sz * opts.deadzone, 0, 2 * Math.PI);
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.2)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
+        ctx.stroke();
+    }
+
     // Helper function for circularity visualization color
     function cc_to_color(cc) {
         const dd = Math.sqrt(Math.pow((1.0 - cc), 2));
