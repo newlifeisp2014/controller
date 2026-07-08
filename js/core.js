@@ -1916,6 +1916,105 @@ window.show_quick_test_modal = () => {
   });
 };
 
+window.startGamepadApiMode = () => {
+  $("#missinghid").hide();
+  $("#offlinebar").hide();
+  $("#onlinebar").show();
+  $("#mainmenu").show();
+  $("#resetBtn").hide();
+
+  // Hide calibration and debug tabs
+  $("#ds5finetune").hide();
+  $("#four-step-center-calib").hide();
+  $("#quick-center-calib-group").hide();
+  $("#range-calib-group").hide();
+  $("#restore-calibration-btn").hide();
+  $("#log-tab").parent().hide();
+  $("#info-tab").parent().hide();
+  $("#debug-tab").parent().hide();
+
+  $("#devname").text("Mobile Gamepad Mode");
+
+  if (!controller) {
+    controller = initControllerManager({ handleNvStatusUpdate });
+  }
+
+  controller.currentController = {
+    getNumberOfSticks: () => 2,
+    getModel: () => "Generic"
+  };
+
+  let lastGamepadInputTime = performance.now();
+  let gamepadInputCount = 0;
+
+  function pollGamepads() {
+    const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+    let gp = null;
+    for (let i = 0; i < gamepads.length; i++) {
+      if (gamepads[i]) {
+        gp = gamepads[i];
+        break;
+      }
+    }
+
+    if (gp) {
+      $("#devname").text("Gamepad Connected: " + gp.id);
+      
+      // Map axes: 0=LX, 1=LY, 2=RX, 3=RY
+      const lx = gp.axes[0] || 0;
+      const ly = gp.axes[1] || 0;
+      const rx = gp.axes[2] || 0;
+      const ry = gp.axes[3] || 0;
+
+      controller.button_states.sticks = {
+        left: { x: lx, y: ly },
+        right: { x: rx, y: ry }
+      };
+
+      // Map triggers
+      controller.button_states.l2_analog = Math.round((gp.buttons[6]?.value || 0) * 255);
+      controller.button_states.r2_analog = Math.round((gp.buttons[7]?.value || 0) * 255);
+
+      // Map buttons (Standard Gamepad Mapping)
+      const standardButtons = ['cross', 'circle', 'square', 'triangle', 'l1', 'r1', 'l2', 'r2', 'create', 'options', 'l3', 'r3', 'up', 'down', 'left', 'right', 'ps', 'touchpad'];
+      for (let i = 0; i < standardButtons.length; i++) {
+        if (gp.buttons[i]) {
+          controller.button_states[standardButtons[i]] = gp.buttons[i].pressed;
+        }
+      }
+
+      // Calculate polling rate
+      const now = performance.now();
+      gamepadInputCount++;
+      if (now - lastGamepadInputTime >= 1000) {
+        const hz = gamepadInputCount;
+        const ms = gamepadInputCount > 0 ? 1000 / gamepadInputCount : 0;
+        gamepadInputCount = 0;
+        lastGamepadInputTime = now;
+        
+        const prElem = document.getElementById('polling-rate-val');
+        if (!prElem) {
+           const backupElem = document.getElementById('polling-rate-value');
+           if (backupElem) backupElem.innerText = `${hz} Hz (${ms.toFixed(2)} ms)`;
+        } else {
+           prElem.innerText = `${hz} Hz`;
+        }
+      }
+
+      // Update UI
+      if (typeof update_stick_graphics === 'function') {
+        update_stick_graphics(controller.button_states);
+      }
+    } else {
+      $("#devname").text("Waiting for Gamepad (Press a button)...");
+    }
+
+    requestAnimationFrame(pollGamepads);
+  }
+
+  requestAnimationFrame(pollGamepads);
+};
+
 // ── New Feature Exports ──────────────────────────────────────────────
 window.show_led_control_modal = show_led_control_modal;
 window.ledColorChanged = ledColorChanged;
