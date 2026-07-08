@@ -1,4 +1,5 @@
 'use strict';
+import { Storage } from '../storage.js';
 
 /**
  * LED Control Modal
@@ -222,6 +223,15 @@ export async function applyLedSettings() {
       _showLedStatus(`LED applied: rgb(${r},${g},${b})`, 'success');
     } else {
       _showLedStatus('LED control not supported for this controller model', 'warning');
+    }
+
+    // Save to profile
+    if (typeof _ledController?.getSerialNumber === 'function') {
+      const sn = await _ledController.getSerialNumber();
+      Storage.saveProfile(sn, { led: { r, g, b } });
+    } else if (typeof _ledController?.currentController?.getSerialNumber === 'function') {
+      const sn = await _ledController.currentController.getSerialNumber();
+      Storage.saveProfile(sn, { led: { r, g, b } });
     }
   } catch (err) {
     _showLedStatus(`Error: ${err.message}`, 'danger');
