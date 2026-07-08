@@ -44,6 +44,12 @@ class ControllerManager {
       is_error: false
     };
     this._lastBatteryText = "";
+
+    // Polling rate tracking
+    this.inputCount = 0;
+    this.lastInputTime = performance.now();
+    this.pollingRate = 0;
+    this.inputLag = 0;
   }
 
   /**
@@ -504,12 +510,12 @@ class ControllerManager {
   * Generic button processing for DS4/DS5
   * Records button states and returns changes
   */
-  _recordButtonStates(data, BUTTON_MAP, dpad_byte, l2_analog_byte, r2_analog_byte) {
+  _recordButtonStates(data, BUTTON_MAP, dpad_byte, l2_analog_byte, r2_analog_byte, offset = 0) {
     const changes = {};
 
-    // Stick positions (always at bytes 0-3)
+    // Stick positions (always at bytes 0-3 + offset)
     const [new_lx, new_ly, new_rx, new_ry] = [0, 1, 2, 3]
-      .map(i => data.getUint8(i))
+      .map(i => data.getUint8(i + offset))
       .map(v => Math.round((v - 127.5) / 128 * 100) / 100);
 
     const newSticks = {
@@ -527,7 +533,7 @@ class ControllerManager {
       ['l2', l2_analog_byte],
       ['r2', r2_analog_byte]
     ].forEach(([name, byte]) => {
-      const val = data.getUint8(byte);
+      const val = data.getUint8(byte + offset);
       const key = name + '_analog';
       if (val !== this.button_states[key]) {
         this.button_states[key] = val;
@@ -536,7 +542,7 @@ class ControllerManager {
     });
 
     // Dpad is a 4-bit hat value
-    const hat = data.getUint8(dpad_byte) & 0x0F;
+    const hat = data.getUint8(dpad_byte + offset) & 0x0F;
     const dpad_map = {
       up:    (hat === 0 || hat === 1 || hat === 7),
       right: (hat === 1 || hat === 2 || hat === 3),
@@ -554,7 +560,7 @@ class ControllerManager {
     // Other buttons
     for (const btn of BUTTON_MAP) {
       if (['up', 'right', 'down', 'left'].includes(btn.name)) continue; // Dpad handled above
-      const pressed = (data.getUint8(btn.byte) & btn.mask) !== 0;
+      const pressed = (data.getUint8(btn.byte + offset) & btn.mask) !== 0;
       if (this.button_states[btn.name] !== pressed) {
         this.button_states[btn.name] = pressed;
         changes[btn.name] = pressed;
@@ -571,22 +577,46 @@ class ControllerManager {
   * @returns {Object} Changes object containing processed input data
   */
   processControllerInput(inputData) {
-    const { data } = inputData;
+    const { data, reportId } = inputData;
+
+    // Determine BT offset
+    let offset = 0;
+    if (reportId === 0x31) { // DS5 BT
+      offset = 1;
+    } else if (reportId === 0x11) { // DS4 BT
+      offset = 2;
+    }
 
     const inputConfig = this.currentController.getInputConfig();
     const { buttonMap, dpadByte, l2AnalogByte, r2AnalogByte } = inputConfig;
     const { touchpadOffset } = inputConfig;
 
     // Process button states using the device-specific configuration
-    const changes = this._recordButtonStates(data, buttonMap, dpadByte, l2AnalogByte, r2AnalogByte);
+    const changes = this._recordButtonStates(data, buttonMap, dpadByte, l2AnalogByte, r2AnalogByte, offset);
 
     // Parse and store touch points if touchpad data is available
     if (touchpadOffset) {
-      this.touchPoints = this._parseTouchPoints(data, touchpadOffset);
+      // Touchpad offset also needs to shift for BT
+      this.touchPoints = this._parseTouchPoints(data, touchpadOffset + offset);
     }
 
-    // Parse and store battery status
+    // Parse and store battery status (Battery uses its own offset logic in controllers, we will just pass data for now, it may need offset but we'll leave it to controller)
     this.batteryStatus = this._parseBatteryStatus(data);
+
+    // Calculate Polling Rate
+    const now = performance.now();
+    this.inputCount++;
+    if (now - this.lastInputTime >= 1000) {
+      this.pollingRate = this.inputCount;
+      this.inputLag = this.inputCount > 0 ? 1000 / this.inputCount : 0;
+      this.inputCount = 0;
+      this.lastInputTime = now;
+      
+      const prElem = document.getElementById('polling-rate-value');
+      if (prElem) {
+        prElem.innerText = `${this.pollingRate} Hz (${this.inputLag.toFixed(2)} ms)`;
+      }
+    }
 
     const result = {
       changes,
