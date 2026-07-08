@@ -220,18 +220,27 @@ async function continue_connection({data, device}) {
       return;
     }
 
-    // Detect if the controller is connected via USB
+    // Detect if the controller is connected via Bluetooth
     const reportLen = data.byteLength;
-    if(reportLen != 63) {
-      // throw new Error(l("Please connect the device using a USB cable."));
-      infoAlert(l("The device is connected via Bluetooth. Disconnect and reconnect using a USB cable instead."));
-      await disconnect();
-      return;
+    app.isBluetooth = (reportLen != 63);
+    
+    if (app.isBluetooth) {
+      console.warn("Device connected via Bluetooth. Calibration features disabled.");
     }
 
     // Helper to apply basic UI visibility based on device type
     function applyDeviceUI({ showInfo, showFinetune, showInfoTab, showQuickTests, showFourStepCalib, showQuickCalib, showCalibrationHistory }) {
       $("#infoshowall").toggle(!!showInfo);
+      
+      // Disable calibration features if on Bluetooth to prevent bricking
+      if (app.isBluetooth) {
+        showFinetune = false;
+        showFourStepCalib = false;
+        showQuickCalib = false;
+        showCalibrationHistory = false;
+        $("#resetBtn").hide(); // Also hide reset button
+      }
+
       $("#ds5finetune").toggle(!!showFinetune);
       $("#info-tab").toggle(!!showInfoTab);
       $("#quick-tests-div").css("visibility", showQuickTests ? "visible" : "hidden");
@@ -239,6 +248,7 @@ async function continue_connection({data, device}) {
       $("#quick-center-calib").toggle(!!showQuickCalib);
       $("#quick-center-calib-group").toggle(!!showQuickCalib);
       $("#restore-calibration-btn").toggle(!!showCalibrationHistory);
+      $("#range-calib-group").toggle(!app.isBluetooth); // Hide range calibration
     }
 
     let controllerInstance = null;
