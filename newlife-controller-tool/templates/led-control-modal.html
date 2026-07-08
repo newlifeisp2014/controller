@@ -1,0 +1,81 @@
+<!-- LED Control Modal -->
+<div class="modal fade" id="ledControlModal" tabindex="-1" aria-labelledby="ledControlModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="ledControlModalLabel">
+          <i class="fas fa-lightbulb me-2" style="color: var(--nl-accent-gold);"></i>
+          <span class="ds-i18n">LED Control</span>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body p-4">
+        <!-- Preview Ball -->
+        <div class="d-flex justify-content-center mb-4">
+          <div id="led-preview" style="--led-color: #0040ff;"></div>
+        </div>
+
+        <!-- Color Picker -->
+        <div class="mb-3">
+          <label class="form-label ds-i18n fw-semibold">🎨 اللون</label>
+          <div class="d-flex gap-3 align-items-center">
+            <input type="color" id="led-color-picker" class="form-control" value="#0040ff"
+                   style="width: 60px; height: 40px; cursor: pointer;" oninput="ledColorChanged()">
+            <div class="d-flex gap-2 flex-wrap" id="led-presets">
+              <button class="btn btn-sm rounded-circle led-preset-btn" style="background:#0040ff; width:30px; height:30px; border:2px solid transparent" onclick="setLedPreset('#0040ff')" title="آزرق"></button>
+              <button class="btn btn-sm rounded-circle led-preset-btn" style="background:#ff0040; width:30px; height:30px; border:2px solid transparent" onclick="setLedPreset('#ff0040')" title="أحمر"></button>
+              <button class="btn btn-sm rounded-circle led-preset-btn" style="background:#00ff80; width:30px; height:30px; border:2px solid transparent" onclick="setLedPreset('#00ff80')" title="أخضر"></button>
+              <button class="btn btn-sm rounded-circle led-preset-btn" style="background:#ff8000; width:30px; height:30px; border:2px solid transparent" onclick="setLedPreset('#ff8000')" title="برتقالي"></button>
+              <button class="btn btn-sm rounded-circle led-preset-btn" style="background:#a000ff; width:30px; height:30px; border:2px solid transparent" onclick="setLedPreset('#a000ff')" title="بنفسجي"></button>
+              <button class="btn btn-sm rounded-circle led-preset-btn" style="background:#ffffff; width:30px; height:30px; border:2px solid var(--nl-border)" onclick="setLedPreset('#ffffff')" title="أبيض"></button>
+              <button class="btn btn-sm rounded-circle led-preset-btn" style="background:#000000; width:30px; height:30px; border:2px solid var(--nl-border)" onclick="setLedPreset('#000000')" title="إيقاف"></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Brightness -->
+        <div class="mb-3">
+          <label class="form-label ds-i18n fw-semibold">🔆 السطوع</label>
+          <div class="d-flex gap-3 align-items-center">
+            <input type="range" class="form-range flex-grow-1" id="led-brightness" min="0" max="255" value="128" oninput="ledBrightnessChanged()">
+            <span id="led-brightness-val" class="gyro-value-badge">128</span>
+          </div>
+        </div>
+
+        <!-- Player Indicator -->
+        <div class="mb-3">
+          <label class="form-label ds-i18n fw-semibold">🎮 مؤشر اللاعب</label>
+          <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary btn-sm" onclick="setPlayerLed(1)" id="led-p1">P1</button>
+            <button class="btn btn-outline-secondary btn-sm" onclick="setPlayerLed(2)" id="led-p2">P2</button>
+            <button class="btn btn-outline-secondary btn-sm" onclick="setPlayerLed(3)" id="led-p3">P3</button>
+            <button class="btn btn-outline-secondary btn-sm" onclick="setPlayerLed(4)" id="led-p4">P4</button>
+          </div>
+        </div>
+
+        <!-- Animation -->
+        <div class="mb-3">
+          <label class="form-label ds-i18n fw-semibold">✨ التأثير</label>
+          <select class="form-select form-select-sm" id="led-effect" onchange="ledEffectChanged()">
+            <option value="static" class="ds-i18n">ثابت</option>
+            <option value="breathe" class="ds-i18n">تنفس</option>
+            <option value="rainbow" class="ds-i18n">قوس قزح</option>
+          </select>
+        </div>
+
+        <div id="led-status" class="alert alert-info py-2 d-none" role="alert">
+          <i class="fas fa-info-circle me-2"></i>
+          <span id="led-status-text"></span>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary ds-i18n" data-bs-dismiss="modal">إغلاق</button>
+        <button type="button" class="btn btn-primary ds-i18n" onclick="applyLedSettings()">
+          <i class="fas fa-paper-plane me-2"></i>تطبيق
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
