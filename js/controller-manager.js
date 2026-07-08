@@ -445,11 +445,13 @@ class ControllerManager {
 
       // If duration is specified, automatically turn off vibration after the duration
       if (duration > 0) {
-        setTimeout(async () => {
-          if(!this.currentController) return doneCb({success: true});
-          await this.currentController.setVibration(0, 0); // Turn off vibration
+        await new Promise(resolve => setTimeout(resolve, duration));
+        if(!this.currentController) {
           doneCb({success: true});
-        }, duration);
+          return;
+        }
+        await this.currentController.setVibration(0, 0); // Turn off vibration
+        doneCb({success: true});
       }
     } catch (error) {
       if(!this.currentController) return; // the controller was unplugged
