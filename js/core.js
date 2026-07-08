@@ -627,11 +627,13 @@ function refresh_stick_pos() {
 
   const enable_zoom_center = center_zoom_checked();
   const enable_circ_test = circ_checked();
+  const deadzone = parseFloat(document.getElementById('deadzoneSlider')?.value) || 0;
 
   // Draw left stick
   draw_stick_dial(ctx, hb, yb, sz, plx, ply, {
     circularity_data: enable_circ_test ? ll_data : null,
     enable_zoom_center,
+    deadzone,
   });
 
   if(!hasSingleStick) {
@@ -639,6 +641,7 @@ function refresh_stick_pos() {
     draw_stick_dial(ctx, w-hb, yb, sz, prx, pry, {
       circularity_data: enable_circ_test ? rr_data : null,
       enable_zoom_center,
+      deadzone,
     });
   }
 
@@ -1846,6 +1849,15 @@ function initCalibrationMethod() {
 }
 window.nvslock = nvslock;
 window.welcome_accepted = welcome_accepted;
+window.circ_checked = circ_checked;
+window.center_zoom_checked = center_zoom_checked;
+window.switchToRangeMode = switchToRangeMode;
+
+document.getElementById('deadzoneSlider')?.addEventListener('input', () => {
+  if (controller && controller.button_states && controller.button_states.sticks) {
+    update_stick_graphics({ sticks: controller.button_states.sticks });
+  }
+});
 window.show_donate_modal = show_donate_modal;
 window.show_circularity_warning = show_circularity_warning;
 window.show_quick_test_modal = () => {
